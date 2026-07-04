@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sol System Census</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+
+<script src="data.js"></script>
+<script src="portrait.js"></script>
+<script src="app.js"></script>
+<script>
+  ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(App));
+</script>
+
+<!-- "Ask the Professor" chat widget (worker/). Replace YOUR-SUBDOMAIN with your
+     deployed Worker's real workers.dev subdomain after `wrangler deploy` — see worker/README.md -->
+<script src="https://sol-census-professor.danielhbright.workers.dev/widget.js"
+        data-base-url="https://sol-census-professor.danielhbright.workers.dev"></script>
+</body>
+</html>
