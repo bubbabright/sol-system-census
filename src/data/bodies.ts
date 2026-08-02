@@ -14,6 +14,7 @@ export interface Body {
   color?: string[];
   texture?: string;
   status?: string;
+  rings?: boolean;
 }
 
 // Solar System catalog with remote image URLs (Wikimedia) + procedural SVG fallback.
