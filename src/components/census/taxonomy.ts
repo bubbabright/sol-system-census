@@ -34,7 +34,9 @@ export function buildTree(bodies: Body[]) {
   const roots: TreeNode[] = [];
   bodies.forEach((b) => {
     const node = byId[b.id];
-    if (b.parent && byId[b.parent]) byId[b.parent].children.push(node);
+    if (!node) return;
+    const parent = b.parent ? byId[b.parent] : undefined;
+    if (parent) parent.children.push(node);
     else if (b.parent !== "interstellar") roots.push(node);
   });
   return { byId, roots };
@@ -42,10 +44,10 @@ export function buildTree(bodies: Body[]) {
 
 export function ancestorsOf(body: Body, byId: Record<string, TreeNode>): Body[] {
   const chain: Body[] = [];
-  let cur: Body | null = body.parent ? byId[body.parent] ?? null : null;
+  let cur: Body | null = (body.parent ? byId[body.parent] : null) ?? null;
   while (cur) {
     chain.unshift(cur);
-    cur = cur.parent && byId[cur.parent] ? byId[cur.parent] : null;
+    cur = (cur.parent ? byId[cur.parent] : null) ?? null;
     if (chain.length > 8) break;
   }
   return chain;
