@@ -296,7 +296,7 @@ export function Portrait({ body, size = 320 }: { body: Body; size?: number }) {
   }
 
   // Rings
-  let rings = null;
+  let rings: React.ReactNode = null;
   if (body.rings) {
     const ringColor = body.id === "saturn" ? "#e8d6a0" : "#cce0e8";
     rings = (
