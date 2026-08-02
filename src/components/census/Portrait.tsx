@@ -11,7 +11,7 @@ function hash(str: string) {
 }
 function rng(seed: number) {
   let s = seed >>> 0;
-  return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 0xffffffff; };
+  return () => { s = (s * 1664525 + 1013904223) >>> 0; return Math.round(s / 0xffffffff * 1e6) / 1e6; };
 }
 
 function imgUrl(body: Body, w?: number) {
@@ -76,7 +76,7 @@ export function Portrait({ body, size = 320 }: { body: Body; size?: number }) {
   // PROBE
   if (tex === "probe") {
     return (
-      <svg viewBox={`0 0 ${size} ${size}`} style={{ width: "100%", height: "100%", display: "block" }}>
+      <svg suppressHydrationWarning viewBox={`0 0 ${size} ${size}`} style={{ width: "100%", height: "100%", display: "block" }}>
         <defs>
           <radialGradient id={uid + "_bg"} cx="50%" cy="50%" r="60%">
             <stop offset="0%" stopColor="#0a1018" />
@@ -113,7 +113,7 @@ export function Portrait({ body, size = 320 }: { body: Body; size?: number }) {
   // COMET
   if (tex === "comet") {
     return (
-      <svg viewBox={`0 0 ${size} ${size}`} style={{ width: "100%", height: "100%", display: "block" }}>
+      <svg suppressHydrationWarning viewBox={`0 0 ${size} ${size}`} style={{ width: "100%", height: "100%", display: "block" }}>
         <defs>
           <radialGradient id={uid + "_bg"} cx="50%" cy="50%" r="70%">
             <stop offset="0%" stopColor="#020410" />
@@ -150,7 +150,7 @@ export function Portrait({ body, size = 320 }: { body: Body; size?: number }) {
   // STAR (Sun)
   if (tex === "star") {
     return (
-      <svg viewBox={`0 0 ${size} ${size}`} style={{ width: "100%", height: "100%", display: "block" }}>
+      <svg suppressHydrationWarning viewBox={`0 0 ${size} ${size}`} style={{ width: "100%", height: "100%", display: "block" }}>
         <defs>
           <radialGradient id={uid + "_bg"} cx="50%" cy="50%" r="70%">
             <stop offset="0%" stopColor="#1a0800" />
@@ -309,7 +309,7 @@ export function Portrait({ body, size = 320 }: { body: Body; size?: number }) {
   }
 
   return (
-    <svg viewBox={`0 0 ${size} ${size}`} style={{ width: "100%", height: "100%", display: "block" }}>
+    <svg suppressHydrationWarning viewBox={`0 0 ${size} ${size}`} style={{ width: "100%", height: "100%", display: "block" }}>
       <defs>
         <radialGradient id={uid + "_bg"} cx="50%" cy="50%" r="70%">
           <stop offset="0%" stopColor={bg} />
