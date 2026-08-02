@@ -21,7 +21,26 @@ function imgUrl(body: Body, w?: number) {
   return "https://en.wikipedia.org/wiki/Special:FilePath/" + encodeURIComponent(body.img) + "?width=" + (w || 480);
 }
 
-export function Portrait({ body, size = 320 }: { body: Body; size?: number }) {
+export function Portrait(props: { body: Body; size?: number }) {
+  // Procedural SVG uses floating-point maths that serializes differently on the
+  // server, so only the deterministic <img> path is rendered before hydration.
+  const [mounted, setMounted] = React.useState(false);
+  React.useEffect(() => setMounted(true), []);
+  if (!mounted && !imgUrl(props.body)) {
+    return (
+      <div
+        style={{
+          width: "100%",
+          height: "100%",
+          background: "radial-gradient(ellipse at center, #050810 0%, #000 100%)",
+        }}
+      />
+    );
+  }
+  return <PortraitImpl {...props} />;
+}
+
+function PortraitImpl({ body, size = 320 }: { body: Body; size?: number }) {
   const [imgFailed, setImgFailed] = React.useState(false);
   const url = imgUrl(body, size >= 200 ? 480 : 160);
 
