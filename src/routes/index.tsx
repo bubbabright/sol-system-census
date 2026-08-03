@@ -1,9 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BODIES, type Body, type BodyType } from "@/data/bodies";
 import { CatalogBranch, TypeFilter } from "@/components/census/Catalog";
 import { DetailPanel } from "@/components/census/DetailPanel";
-import { TYPE_ORDER, buildTree, type TreeNode } from "@/components/census/taxonomy";
+import {
+  TYPE_ORDER,
+  buildTree,
+  flattenVisible,
+  type TreeNode,
+} from "@/components/census/taxonomy";
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
