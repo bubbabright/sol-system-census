@@ -20,11 +20,11 @@ export const Route = createFileRoute("/")({
         content:
           "A browsable census of the Solar System: planets, moons, dwarf planets, asteroids, comets, interstellar visitors and spacecraft, with portraits and vital statistics.",
       },
-      { property: "og:title", content: "Sol System Census" },
+      { property: "og:title", content: "Sol System Census — 184 bodies of the Solar System" },
       {
         property: "og:description",
         content:
-          "Browse 184 Solar System bodies by gravitational binding, with portraits, vitals and lineage.",
+          "A browsable census of the Solar System: planets, moons, dwarf planets, asteroids, comets, interstellar visitors and spacecraft, with portraits and vital statistics.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
