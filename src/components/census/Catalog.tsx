@@ -7,7 +7,10 @@ interface RowProps {
   node: TreeNode;
   depth: number;
   selectedId: string | null;
+  /** Roving tabindex: exactly one row in the tree is tabbable at a time. */
+  activeId: string | null;
   onSelect: (node: TreeNode) => void;
+  onFocusRow: (node: TreeNode) => void;
   expanded: Set<string>;
   toggle: (id: string) => void;
   visible: (n: TreeNode) => boolean;
@@ -18,7 +21,9 @@ export function CatalogBranch({
   node,
   depth,
   selectedId,
+  activeId,
   onSelect,
+  onFocusRow,
   expanded,
   toggle,
   visible,
@@ -32,13 +37,14 @@ export function CatalogBranch({
   const shown = typeFilter.has(node.type);
 
   return (
-    <div>
+    <div role={shown ? "treeitem" : "none"} aria-expanded={shown && hasKids ? isOpen : undefined}>
       {shown && (
         <div className="relative">
           {hasKids && (
             <button
               onClick={() => toggle(node.id)}
-              aria-label={isOpen ? "Collapse" : "Expand"}
+              tabIndex={-1}
+              aria-hidden
               className="absolute top-1/2 z-10 -translate-y-1/2 text-ink-low transition-colors hover:text-primary"
               style={{ left: 4 + depth * 14 }}
             >
@@ -46,8 +52,15 @@ export function CatalogBranch({
             </button>
           )}
           <button
-            onClick={() => onSelect(node)}
-            className={`group flex w-full items-center gap-3 rounded-md py-1.5 pr-3 text-left transition-colors ${
+            id={`row-${node.id}`}
+            data-row-id={node.id}
+            tabIndex={activeId === node.id ? 0 : -1}
+            aria-current={selected ? "true" : undefined}
+            onClick={() => {
+              onFocusRow(node);
+              onSelect(node);
+            }}
+            className={`group flex w-full items-center gap-3 rounded-md py-1.5 pr-3 text-left transition-colors outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:ring-offset-background ${
               selected ? "bg-surface-raised" : "hover:bg-surface"
             }`}
             style={{ paddingLeft: 20 + depth * 14 }}
@@ -68,11 +81,16 @@ export function CatalogBranch({
             >
               {meta.glyph}
             </span>
+            <span className="sr-only">{meta.label}</span>
           </button>
         </div>
       )}
       {isOpen && hasKids && (
-        <div className="border-l border-border/60" style={{ marginLeft: 12 + depth * 14 }}>
+        <div
+          role="group"
+          className="border-l border-border/60"
+          style={{ marginLeft: 12 + depth * 14 }}
+        >
           <div style={{ marginLeft: -(12 + depth * 14) }}>
             {node.children.map((c) => (
               <CatalogBranch
@@ -80,7 +98,9 @@ export function CatalogBranch({
                 node={c}
                 depth={depth + 1}
                 selectedId={selectedId}
+                activeId={activeId}
                 onSelect={onSelect}
+                onFocusRow={onFocusRow}
                 expanded={expanded}
                 toggle={toggle}
                 visible={visible}
@@ -93,6 +113,7 @@ export function CatalogBranch({
     </div>
   );
 }
+
 
 export function TypeFilter({
   typeFilter,
