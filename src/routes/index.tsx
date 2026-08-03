@@ -1,9 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BODIES, type Body, type BodyType } from "@/data/bodies";
 import { CatalogBranch, TypeFilter } from "@/components/census/Catalog";
 import { DetailPanel } from "@/components/census/DetailPanel";
-import { TYPE_ORDER, buildTree, type TreeNode } from "@/components/census/taxonomy";
+import {
+  TYPE_ORDER,
+  buildTree,
+  flattenVisible,
+  type TreeNode,
+} from "@/components/census/taxonomy";
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -69,18 +75,42 @@ function Census() {
 
   const selected = selectedId ? byId[selectedId] ?? null : null;
 
-  const select = (b: Body) => {
-    setSelectedId(b.id);
-    setExpanded((prev) => {
-      const next = new Set(prev);
-      let cur: Body | undefined = b;
-      while (cur?.parent && byId[cur.parent]) {
-        next.add(cur.parent);
-        cur = byId[cur.parent];
-      }
-      return next;
-    });
-  };
+  // Keyboard navigation: roving tabindex over the flattened, currently visible rows.
+  const [activeId, setActiveId] = useState<string | null>("earth");
+  const navRef = useRef<HTMLElement | null>(null);
+  const focusPending = useRef(false);
+
+  const rows = useMemo(
+    () =>
+      flattenVisible([...roots, ...interstellar], { expanded, visible, typeFilter }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [roots, interstellar, expanded, typeFilter, matchSet],
+  );
+
+  useEffect(() => {
+    if (!focusPending.current || !activeId) return;
+    focusPending.current = false;
+    const el = navRef.current?.querySelector<HTMLElement>(`[data-row-id="${activeId}"]`);
+    el?.focus();
+    el?.scrollIntoView({ block: "nearest" });
+  }, [activeId, rows]);
+
+  const select = useCallback(
+    (b: Body) => {
+      setSelectedId(b.id);
+      setActiveId(b.id);
+      setExpanded((prev) => {
+        const next = new Set(prev);
+        let cur: Body | undefined = b;
+        while (cur?.parent && byId[cur.parent]) {
+          next.add(cur.parent);
+          cur = byId[cur.parent];
+        }
+        return next;
+      });
+    },
+    [byId],
+  );
 
   const toggle = (id: string) =>
     setExpanded((prev) => {
@@ -89,6 +119,68 @@ function Census() {
       else next.add(id);
       return next;
     });
+
+  /** Move focus (and the detail panel) to the row at `index`. */
+  const moveTo = (index: number) => {
+    const row = rows[Math.max(0, Math.min(rows.length - 1, index))];
+    if (!row) return;
+    focusPending.current = true;
+    setActiveId(row.node.id);
+    setSelectedId(row.node.id);
+  };
+
+  const effectiveActiveId =
+    activeId && rows.some((r) => r.node.id === activeId) ? activeId : rows[0]?.node.id ?? null;
+
+  const onTreeKeyDown = (e: React.KeyboardEvent<HTMLElement>) => {
+    const i = rows.findIndex((r) => r.node.id === effectiveActiveId);
+    const row = i >= 0 ? rows[i] : undefined;
+    switch (e.key) {
+      case "ArrowDown":
+        e.preventDefault();
+        moveTo(i < 0 ? 0 : i + 1);
+        break;
+      case "ArrowUp":
+        e.preventDefault();
+        moveTo(i < 0 ? 0 : i - 1);
+        break;
+      case "Home":
+        e.preventDefault();
+        moveTo(0);
+        break;
+      case "End":
+        e.preventDefault();
+        moveTo(rows.length - 1);
+        break;
+      case "ArrowRight":
+        if (!row) return;
+        e.preventDefault();
+        if (row.hasKids && !row.expanded) toggle(row.node.id);
+        else if (row.hasKids) moveTo(i + 1);
+        break;
+      case "ArrowLeft": {
+        if (!row) return;
+        e.preventDefault();
+        if (row.hasKids && row.expanded) {
+          toggle(row.node.id);
+        } else if (row.parentId) {
+          const p = rows.findIndex((r) => r.node.id === row.parentId);
+          if (p >= 0) moveTo(p);
+        }
+        break;
+      }
+      case "Enter":
+      case " ": {
+        if (!row) return;
+        e.preventDefault();
+        select(row.node);
+        break;
+      }
+      default:
+        break;
+    }
+  };
+
 
   return (
     <div className="mx-auto flex h-screen max-w-[1800px] flex-col px-4 lg:px-6">
@@ -118,21 +210,32 @@ function Census() {
 
       <main className="grid min-h-0 flex-1 gap-5 py-4 lg:grid-cols-[300px_minmax(0,1fr)]">
         {/* Catalog: names + type glyph only. Vitals live in the detail panel. */}
-        <nav className="scroll-slim hidden min-h-0 flex-col overflow-y-auto pr-1 lg:flex">
+        <nav
+          ref={navRef}
+          aria-label="Catalog of Solar System bodies"
+          className="scroll-slim hidden min-h-0 flex-col overflow-y-auto pr-1 lg:flex"
+        >
           <TypeFilter
             typeFilter={typeFilter}
             setTypeFilter={setTypeFilter}
             counts={counts}
             order={TYPE_ORDER}
           />
-          <div className="pt-2">
+          <div
+            role="tree"
+            aria-label="Bodies by gravitational binding"
+            onKeyDown={onTreeKeyDown}
+            className="pt-2"
+          >
             {roots.map((n) => (
               <CatalogBranch
                 key={n.id}
                 node={n}
                 depth={0}
                 selectedId={selectedId}
+                activeId={effectiveActiveId}
                 onSelect={select}
+                onFocusRow={(node) => setActiveId(node.id)}
                 expanded={expanded}
                 toggle={toggle}
                 visible={visible}
@@ -148,7 +251,9 @@ function Census() {
                     node={n}
                     depth={0}
                     selectedId={selectedId}
+                    activeId={effectiveActiveId}
                     onSelect={select}
+                    onFocusRow={(node) => setActiveId(node.id)}
                     expanded={expanded}
                     toggle={toggle}
                     visible={visible}
@@ -159,6 +264,7 @@ function Census() {
             )}
           </div>
         </nav>
+
 
         <div className="min-h-0">
           <DetailPanel body={selected} byId={byId} onSelect={select} />
