@@ -52,3 +52,45 @@ export function ancestorsOf(body: Body, byId: Record<string, TreeNode>): Body[] 
   }
   return chain;
 }
+
+export interface FlatRow {
+  node: TreeNode;
+  depth: number;
+  hasKids: boolean;
+  expanded: boolean;
+  parentId: string | null;
+}
+
+/**
+ * Depth-first list of the rows currently rendered in the catalog, in visual
+ * order. This is the model keyboard navigation walks.
+ */
+export function flattenVisible(
+  roots: TreeNode[],
+  opts: {
+    expanded: Set<string>;
+    visible: (n: TreeNode) => boolean;
+    typeFilter: Set<BodyType>;
+  },
+): FlatRow[] {
+  const rows: FlatRow[] = [];
+  const walk = (node: TreeNode, depth: number, parentId: string | null) => {
+    if (!opts.visible(node)) return;
+    const isOpen = opts.expanded.has(node.id);
+    const shown = opts.typeFilter.has(node.type);
+    if (shown) {
+      rows.push({
+        node,
+        depth,
+        hasKids: node.children.length > 0,
+        expanded: isOpen,
+        parentId,
+      });
+    }
+    if (isOpen) {
+      node.children.forEach((c) => walk(c, depth + 1, shown ? node.id : parentId));
+    }
+  };
+  roots.forEach((r) => walk(r, 0, null));
+  return rows;
+}
