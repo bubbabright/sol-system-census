@@ -129,8 +129,11 @@ function Census() {
     setSelectedId(row.node.id);
   };
 
+  const effectiveActiveId =
+    activeId && rows.some((r) => r.node.id === activeId) ? activeId : rows[0]?.node.id ?? null;
+
   const onTreeKeyDown = (e: React.KeyboardEvent<HTMLElement>) => {
-    const i = rows.findIndex((r) => r.node.id === activeId);
+    const i = rows.findIndex((r) => r.node.id === effectiveActiveId);
     const row = i >= 0 ? rows[i] : undefined;
     switch (e.key) {
       case "ArrowDown":
@@ -230,7 +233,7 @@ function Census() {
                 node={n}
                 depth={0}
                 selectedId={selectedId}
-                activeId={activeId}
+                activeId={effectiveActiveId}
                 onSelect={select}
                 onFocusRow={(node) => setActiveId(node.id)}
                 expanded={expanded}
@@ -248,7 +251,7 @@ function Census() {
                     node={n}
                     depth={0}
                     selectedId={selectedId}
-                    activeId={activeId}
+                    activeId={effectiveActiveId}
                     onSelect={select}
                     onFocusRow={(node) => setActiveId(node.id)}
                     expanded={expanded}
