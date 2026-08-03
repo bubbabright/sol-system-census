@@ -75,18 +75,42 @@ function Census() {
 
   const selected = selectedId ? byId[selectedId] ?? null : null;
 
-  const select = (b: Body) => {
-    setSelectedId(b.id);
-    setExpanded((prev) => {
-      const next = new Set(prev);
-      let cur: Body | undefined = b;
-      while (cur?.parent && byId[cur.parent]) {
-        next.add(cur.parent);
-        cur = byId[cur.parent];
-      }
-      return next;
-    });
-  };
+  // Keyboard navigation: roving tabindex over the flattened, currently visible rows.
+  const [activeId, setActiveId] = useState<string | null>("earth");
+  const navRef = useRef<HTMLElement | null>(null);
+  const focusPending = useRef(false);
+
+  const rows = useMemo(
+    () =>
+      flattenVisible([...roots, ...interstellar], { expanded, visible, typeFilter }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [roots, interstellar, expanded, typeFilter, matchSet],
+  );
+
+  useEffect(() => {
+    if (!focusPending.current || !activeId) return;
+    focusPending.current = false;
+    const el = navRef.current?.querySelector<HTMLElement>(`[data-row-id="${activeId}"]`);
+    el?.focus();
+    el?.scrollIntoView({ block: "nearest" });
+  }, [activeId, rows]);
+
+  const select = useCallback(
+    (b: Body) => {
+      setSelectedId(b.id);
+      setActiveId(b.id);
+      setExpanded((prev) => {
+        const next = new Set(prev);
+        let cur: Body | undefined = b;
+        while (cur?.parent && byId[cur.parent]) {
+          next.add(cur.parent);
+          cur = byId[cur.parent];
+        }
+        return next;
+      });
+    },
+    [byId],
+  );
 
   const toggle = (id: string) =>
     setExpanded((prev) => {
@@ -95,6 +119,65 @@ function Census() {
       else next.add(id);
       return next;
     });
+
+  /** Move focus (and the detail panel) to the row at `index`. */
+  const moveTo = (index: number) => {
+    const row = rows[Math.max(0, Math.min(rows.length - 1, index))];
+    if (!row) return;
+    focusPending.current = true;
+    setActiveId(row.node.id);
+    setSelectedId(row.node.id);
+  };
+
+  const onTreeKeyDown = (e: React.KeyboardEvent<HTMLElement>) => {
+    const i = rows.findIndex((r) => r.node.id === activeId);
+    const row = i >= 0 ? rows[i] : undefined;
+    switch (e.key) {
+      case "ArrowDown":
+        e.preventDefault();
+        moveTo(i < 0 ? 0 : i + 1);
+        break;
+      case "ArrowUp":
+        e.preventDefault();
+        moveTo(i < 0 ? 0 : i - 1);
+        break;
+      case "Home":
+        e.preventDefault();
+        moveTo(0);
+        break;
+      case "End":
+        e.preventDefault();
+        moveTo(rows.length - 1);
+        break;
+      case "ArrowRight":
+        if (!row) return;
+        e.preventDefault();
+        if (row.hasKids && !row.expanded) toggle(row.node.id);
+        else if (row.hasKids) moveTo(i + 1);
+        break;
+      case "ArrowLeft": {
+        if (!row) return;
+        e.preventDefault();
+        if (row.hasKids && row.expanded) {
+          toggle(row.node.id);
+        } else if (row.parentId) {
+          const p = rows.findIndex((r) => r.node.id === row.parentId);
+          if (p >= 0) moveTo(p);
+        }
+        break;
+      }
+      case "Enter":
+      case " ": {
+        if (!row) return;
+        e.preventDefault();
+        select(row.node);
+        break;
+      }
+      default:
+        break;
+    }
+  };
+
 
   return (
     <div className="mx-auto flex h-screen max-w-[1800px] flex-col px-4 lg:px-6">
