@@ -207,21 +207,32 @@ function Census() {
 
       <main className="grid min-h-0 flex-1 gap-5 py-4 lg:grid-cols-[300px_minmax(0,1fr)]">
         {/* Catalog: names + type glyph only. Vitals live in the detail panel. */}
-        <nav className="scroll-slim hidden min-h-0 flex-col overflow-y-auto pr-1 lg:flex">
+        <nav
+          ref={navRef}
+          aria-label="Catalog of Solar System bodies"
+          className="scroll-slim hidden min-h-0 flex-col overflow-y-auto pr-1 lg:flex"
+        >
           <TypeFilter
             typeFilter={typeFilter}
             setTypeFilter={setTypeFilter}
             counts={counts}
             order={TYPE_ORDER}
           />
-          <div className="pt-2">
+          <div
+            role="tree"
+            aria-label="Bodies by gravitational binding"
+            onKeyDown={onTreeKeyDown}
+            className="pt-2"
+          >
             {roots.map((n) => (
               <CatalogBranch
                 key={n.id}
                 node={n}
                 depth={0}
                 selectedId={selectedId}
+                activeId={activeId}
                 onSelect={select}
+                onFocusRow={(node) => setActiveId(node.id)}
                 expanded={expanded}
                 toggle={toggle}
                 visible={visible}
@@ -237,7 +248,9 @@ function Census() {
                     node={n}
                     depth={0}
                     selectedId={selectedId}
+                    activeId={activeId}
                     onSelect={select}
+                    onFocusRow={(node) => setActiveId(node.id)}
                     expanded={expanded}
                     toggle={toggle}
                     visible={visible}
@@ -248,6 +261,7 @@ function Census() {
             )}
           </div>
         </nav>
+
 
         <div className="min-h-0">
           <DetailPanel body={selected} byId={byId} onSelect={select} />
