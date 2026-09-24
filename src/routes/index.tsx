@@ -1,8 +1,18 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { Menu } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BODIES, type Body, type BodyType } from "@/data/bodies";
 import { CatalogBranch, TypeFilter } from "@/components/census/Catalog";
 import { DetailPanel } from "@/components/census/DetailPanel";
+import { Button } from "@/components/ui/button";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import {
   TYPE_ORDER,
   buildTree,
@@ -37,6 +47,7 @@ function Census() {
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<Set<BodyType>>(new Set(TYPE_ORDER));
   const [selectedId, setSelectedId] = useState<string | null>("earth");
+  const [mobileCatalogOpen, setMobileCatalogOpen] = useState(false);
   const [expanded, setExpanded] = useState<Set<string>>(
     () => new Set(["sun", "earth", "mars", "jupiter", "saturn", "uranus", "neptune", "pluto"]),
   );
@@ -77,7 +88,8 @@ function Census() {
 
   // Keyboard navigation: roving tabindex over the flattened, currently visible rows.
   const [activeId, setActiveId] = useState<string | null>("earth");
-  const navRef = useRef<HTMLElement | null>(null);
+  const desktopNavRef = useRef<HTMLElement | null>(null);
+  const mobileNavRef = useRef<HTMLElement | null>(null);
   const focusPending = useRef(false);
 
   const rows = useMemo(
@@ -90,10 +102,11 @@ function Census() {
   useEffect(() => {
     if (!focusPending.current || !activeId) return;
     focusPending.current = false;
-    const el = navRef.current?.querySelector<HTMLElement>(`[data-row-id="${activeId}"]`);
+    const activeNav = mobileCatalogOpen ? mobileNavRef.current : desktopNavRef.current;
+    const el = activeNav?.querySelector<HTMLElement>(`[data-row-id="${activeId}"]`);
     el?.focus();
     el?.scrollIntoView({ block: "nearest" });
-  }, [activeId, rows]);
+  }, [activeId, rows, mobileCatalogOpen]);
 
   const select = useCallback(
     (b: Body) => {
@@ -131,6 +144,59 @@ function Census() {
 
   const effectiveActiveId =
     activeId && rows.some((r) => r.node.id === activeId) ? activeId : rows[0]?.node.id ?? null;
+
+  const renderCatalog = (onSelect: (body: Body) => void) => (
+    <>
+      <TypeFilter
+        typeFilter={typeFilter}
+        setTypeFilter={setTypeFilter}
+        counts={counts}
+        order={TYPE_ORDER}
+      />
+      <div
+        role="tree"
+        aria-label="Bodies by gravitational binding"
+        onKeyDown={onTreeKeyDown}
+        className="pt-2"
+      >
+        {roots.map((n) => (
+          <CatalogBranch
+            key={n.id}
+            node={n}
+            depth={0}
+            selectedId={selectedId}
+            activeId={effectiveActiveId}
+            onSelect={onSelect}
+            onFocusRow={(node) => setActiveId(node.id)}
+            expanded={expanded}
+            toggle={toggle}
+            visible={visible}
+            typeFilter={typeFilter}
+          />
+        ))}
+        {interstellar.length > 0 && (
+          <div className="mt-4 border-t border-border pt-3">
+            <div className="label-caps px-1 pb-1">Interstellar space</div>
+            {interstellar.map((n) => (
+              <CatalogBranch
+                key={n.id}
+                node={n}
+                depth={0}
+                selectedId={selectedId}
+                activeId={effectiveActiveId}
+                onSelect={onSelect}
+                onFocusRow={(node) => setActiveId(node.id)}
+                expanded={expanded}
+                toggle={toggle}
+                visible={visible}
+                typeFilter={typeFilter}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    </>
+  );
 
   const onTreeKeyDown = (e: React.KeyboardEvent<HTMLElement>) => {
     const i = rows.findIndex((r) => r.node.id === effectiveActiveId);
@@ -183,13 +249,41 @@ function Census() {
 
 
   return (
-    <div className="mx-auto flex h-screen max-w-[1800px] flex-col px-4 lg:px-6">
-      <header className="grid shrink-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-4 border-b border-border py-3 sm:flex sm:justify-between">
+    <div className="mx-auto flex h-dvh max-w-[1800px] flex-col px-4 lg:px-6">
+      <header className="grid shrink-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-3 border-b border-border py-3 sm:grid-cols-[minmax(0,1fr)_minmax(16rem,20rem)] lg:flex lg:justify-between">
+        <Sheet open={mobileCatalogOpen} onOpenChange={setMobileCatalogOpen}>
+          <SheetTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="shrink-0 lg:hidden"
+              aria-label="Open catalog"
+            >
+              <Menu />
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="left" className="flex w-[88vw] max-w-sm flex-col gap-0 p-0">
+            <SheetHeader className="shrink-0 border-b border-border px-5 py-4 text-left">
+              <SheetTitle className="font-display text-2xl font-normal">Catalog</SheetTitle>
+              <SheetDescription>{BODIES.length} Solar System bodies</SheetDescription>
+            </SheetHeader>
+            <nav
+              ref={mobileNavRef}
+              aria-label="Catalog of Solar System bodies"
+              className="scroll-slim min-h-0 flex-1 overflow-y-auto px-4 py-3"
+            >
+              {renderCatalog((body) => {
+                select(body);
+                setMobileCatalogOpen(false);
+              })}
+            </nav>
+          </SheetContent>
+        </Sheet>
         <div className="flex min-w-0 items-baseline gap-3">
           <h1 className="truncate font-display text-2xl leading-none">Sol System Census</h1>
           <span className="label-caps hidden sm:inline">{BODIES.length} bodies</span>
         </div>
-        <div className="relative w-full max-w-xs">
+        <div className="relative col-span-2 w-full sm:col-span-1 sm:max-w-xs">
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -211,58 +305,11 @@ function Census() {
       <main className="grid min-h-0 flex-1 gap-5 py-4 lg:grid-cols-[300px_minmax(0,1fr)]">
         {/* Catalog: names + type glyph only. Vitals live in the detail panel. */}
         <nav
-          ref={navRef}
+          ref={desktopNavRef}
           aria-label="Catalog of Solar System bodies"
           className="scroll-slim hidden min-h-0 flex-col overflow-y-auto pr-1 lg:flex"
         >
-          <TypeFilter
-            typeFilter={typeFilter}
-            setTypeFilter={setTypeFilter}
-            counts={counts}
-            order={TYPE_ORDER}
-          />
-          <div
-            role="tree"
-            aria-label="Bodies by gravitational binding"
-            onKeyDown={onTreeKeyDown}
-            className="pt-2"
-          >
-            {roots.map((n) => (
-              <CatalogBranch
-                key={n.id}
-                node={n}
-                depth={0}
-                selectedId={selectedId}
-                activeId={effectiveActiveId}
-                onSelect={select}
-                onFocusRow={(node) => setActiveId(node.id)}
-                expanded={expanded}
-                toggle={toggle}
-                visible={visible}
-                typeFilter={typeFilter}
-              />
-            ))}
-            {interstellar.length > 0 && (
-              <div className="mt-4 border-t border-border pt-3">
-                <div className="label-caps px-1 pb-1">Interstellar space</div>
-                {interstellar.map((n) => (
-                  <CatalogBranch
-                    key={n.id}
-                    node={n}
-                    depth={0}
-                    selectedId={selectedId}
-                    activeId={effectiveActiveId}
-                    onSelect={select}
-                    onFocusRow={(node) => setActiveId(node.id)}
-                    expanded={expanded}
-                    toggle={toggle}
-                    visible={visible}
-                    typeFilter={typeFilter}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
+          {renderCatalog(select)}
         </nav>
 
 
