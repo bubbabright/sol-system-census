@@ -46,8 +46,8 @@ export function DetailPanel({
           nothing is repeated in the body below. */}
       <div className="relative shrink-0 aspect-[16/9] w-full overflow-hidden bg-background md:aspect-[2/1]">
         <Portrait body={body} size={640} />
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
-        <div className="absolute inset-x-0 bottom-0 p-5 md:p-7">
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-background via-background/60 via-45% to-background/0" />
+        <div className="on-photo absolute inset-x-0 bottom-0 p-5 md:p-7">
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px]">
             {chain.map((b) => (
               <span key={b.id} className="flex items-center gap-2">
