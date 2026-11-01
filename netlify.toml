@@ -1,0 +1,15 @@
+# Netlify deployment for Sol System Census.
+# The app is server-rendered and has server functions, so it needs Netlify's serverless
+# runtime (not a static upload). The Netlify Vite plugin writes the server handler to
+# .netlify/v1/functions/server.mjs and Vite emits static assets to dist/client.
+[build]
+  command = "npm run build:netlify"
+  publish = "dist/client"
+
+[build.environment]
+  # Vite 8 needs Node 20.19+ / 22.12+.
+  NODE_VERSION = "22"
+
+[functions]
+  # AI answers stream back from the model; the 10s default is too tight.
+  timeout = 28
