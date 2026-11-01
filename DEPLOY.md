@@ -113,3 +113,22 @@ sudo journalctl -u census -n 50 --no-pager
 ```
 
 Note: on an ARM (Ampere A1) VM everything above works unchanged.
+
+## AI questions on the VM
+
+The catalog’s question panel calls AI Gateway from the Node server. It does not
+require visitor accounts or database tables; conversations last only while the
+current object remains selected. AI calls consume the workspace’s AI credits.
+
+Lovable provides credentials in its hosted environment, but these do **not** sync
+to GitHub or your VM. Create an AI Gateway key in Lovable and store it only on the
+VM in a root-owned `/etc/census.env` file (permissions `0600`), using the variable
+name `LOVABLE_API_KEY`. Never commit that file or paste the key into chat.
+Add `EnvironmentFile=/etc/census.env` under `[Service]` in `census.service`, then
+run `sudo systemctl daemon-reload && sudo systemctl restart census`.
+
+Allow outbound HTTPS to `ai.gateway.lovable.dev`. Verify by selecting Earth and
+asking a question through the site. Without the server credential, the catalog
+still works but the question panel reports that AI answers are not configured.
+The public question endpoint can spend AI credits; configure workspace spending
+limits and VM/proxy rate limiting appropriate to your traffic before broad release.

@@ -1,5 +1,6 @@
 import type { Body } from "@/data/bodies";
 import { Portrait } from "./Portrait";
+import { QuestionPanel } from "./QuestionPanel";
 import { TYPE_META, ancestorsOf, type TreeNode } from "./taxonomy";
 
 function Fact({ label, value }: { label: string; value?: string }) {
@@ -89,6 +90,8 @@ export function DetailPanel({
         <p className="max-w-[68ch] pt-4 text-[15px] leading-relaxed text-foreground/90">
           {body.tldr}
         </p>
+
+        <QuestionPanel key={body.id} body={body} />
 
         {kids.length > 0 && (
           <div className="pt-6">
