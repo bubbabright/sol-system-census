@@ -6,6 +6,7 @@ import {
   useRouter,
   HeadContent,
   Scripts,
+  type ErrorComponentProps,
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
 
@@ -34,7 +35,7 @@ function NotFoundComponent() {
   );
 }
 
-function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
+function ErrorComponent({ error, reset }: ErrorComponentProps) {
   console.error(error);
   const router = useRouter();
   useEffect(() => {
@@ -87,8 +88,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:site", content: "@Lovable" },
       { name: "twitter:title", content: "Sol System Census — 184 bodies of the Solar System" },
       { name: "twitter:description", content: "A browsable census of the Solar System: planets, moons, dwarf planets, asteroids, comets, interstellar visitors and spacecraft, with portraits and vital statistics." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/31cb770d-a18c-4d9d-9301-a35f1679fcb3/id-preview-4fdf6526--6478828d-44f0-46bb-9461-22d1dbd8428c.lovable.app-1785715350630.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/31cb770d-a18c-4d9d-9301-a35f1679fcb3/id-preview-4fdf6526--6478828d-44f0-46bb-9461-22d1dbd8428c.lovable.app-1785715350630.png" },
     ],
     links: [
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
