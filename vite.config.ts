@@ -15,15 +15,18 @@ const isNetlifyBuild =
   !isLovableBuild &&
   (process.env["NETLIFY"] === "true" || process.env["LOVABLE_TARGET"] === "netlify");
 
+// On Netlify the server build ships as a Netlify function instead of a Nitro bundle, so
+// Nitro is switched off there. The key is left out entirely otherwise: this config file is
+// type-checked with exactOptionalPropertyTypes, so an explicit `undefined` would not fit.
+const netlifyBuildOptions = isNetlifyBuild
+  ? { nitro: false as const, vite: { plugins: [netlify()] } }
+  : {};
+
 export default defineConfig({
-  // On Netlify the server build ships as a Netlify function instead of a Nitro bundle.
-  nitro: isNetlifyBuild ? false : undefined,
+  ...netlifyBuildOptions,
   tanstackStart: {
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
     // nitro/vite builds from this
     server: { entry: "server" },
-  },
-  vite: {
-    plugins: isNetlifyBuild ? [netlify()] : [],
   },
 });
